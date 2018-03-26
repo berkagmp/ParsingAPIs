@@ -4,7 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -60,5 +62,35 @@ public class MySQLConnectionMaker implements ConnectionMaker {
 		Connection c = DriverManager.getConnection(url, id, pwd);
 
 		return c;
+	}
+
+	public void releaseConnection(Connection c) {
+		try {
+			if (c != null)
+				c.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void releaseConnection(PreparedStatement p) {
+		try {
+			if (p != null)
+				p.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public void releaseConnection(ResultSet rs) {
+		try {
+			if (rs != null)
+				rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

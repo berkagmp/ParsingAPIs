@@ -1,11 +1,13 @@
 package derek.aut.ParsingGoogleAPIs.dto;
 
+import java.util.List;
+
 public class Method {
 	private String api;
 	private String method;
 	private String description;
 	private String responseType;
-	private ReqeustParameter requestParameter;
+	private List<RequestParameter> requestParameterList;
 
 	public String getApi() {
 		return api;
@@ -39,12 +41,18 @@ public class Method {
 		this.responseType = responseType;
 	}
 
-	public ReqeustParameter getRequestParameter() {
-		return requestParameter;
+	public List<RequestParameter> getRequestParameterList() {
+		return requestParameterList;
 	}
 
-	public void setRequestParameter(ReqeustParameter requestParameter) {
-		this.requestParameter = requestParameter;
+	public void setRequestParameterList(List<RequestParameter> requestParameterList) {
+		this.requestParameterList = requestParameterList;
+	}
+
+	@Override
+	public String toString() {
+		return "Method [api=" + api + ", method=" + method + ", description=" + description + ", responseType="
+				+ responseType + ", requestParameterList=" + requestParameterList + "]";
 	}
 
 }

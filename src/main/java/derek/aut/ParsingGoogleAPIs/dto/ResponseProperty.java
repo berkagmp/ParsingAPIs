@@ -29,4 +29,9 @@ public class ResponseProperty {
 		this.description = description;
 	}
 
+	@Override
+	public String toString() {
+		return "ResponseProperty [resName=" + resName + ", resType=" + resType + ", description=" + description + "]";
+	}
+
 }
