@@ -60,7 +60,8 @@ public class ItemDao {
 				if (rs.next()) {
 					primaryKey = rs.getInt("id");
 				}
-
+				
+				//System.out.println("\r\n" + m.toString());
 				index = 1;
 				ps.setInt(index++, primaryKey);
 				ps.setString(index++, m.getApi());
@@ -72,7 +73,7 @@ public class ItemDao {
 
 				List<RequestParameter> requestParameterList = m.getRequestParameterList();
 
-				if (requestParameterList.size() > 0) {
+				if (requestParameterList != null && requestParameterList.size() > 0) {
 					for (RequestParameter r : requestParameterList) {
 						index = 1;
 						sub_ps.setString(index++, r.getParam());
@@ -146,7 +147,7 @@ public class ItemDao {
 
 				List<ResponseProperty> responsePropertyList = r.getResponsePropertyList();
 
-				if (responsePropertyList.size() > 0) {
+				if (responsePropertyList != null && responsePropertyList.size() > 0) {
 					for (ResponseProperty rp : responsePropertyList) {
 						index = 1;
 						sub_ps.setString(index++, rp.getResName());

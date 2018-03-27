@@ -34,7 +34,7 @@ public class App {
 	private static JsonObject jsonObject = null;
 
 	private static boolean dataPutYn = true;
-	private static boolean test = false;
+	private static boolean testYn = false;
 
 	private static String value = "";
 
@@ -55,12 +55,12 @@ public class App {
 		Gson gson = new Gson();
 
 		String url = "https://www.googleapis.com/discovery/v1/apis?parameters";
-		Result rootJson = null;
+		Result result = null;
 
 		ItemDao itemDao = null;
 
-		if (!test) {
-			rootJson = restTemplate.getForObject(url, Result.class);
+		if (!testYn) {
+			result = restTemplate.getForObject(url, Result.class);
 		}
 
 		try {
@@ -71,53 +71,63 @@ public class App {
 				itemDao = new ItemDaoFactory().userDao();
 			}
 
-			if (rootJson != null) {
-				List<Item> array = rootJson.getItems();
+			if (result != null) {
+				List<Item> array = result.getItems();
+				for (Item item : array) {
+					if (item.getId().indexOf("alpha") < 0 && item.getId().indexOf("beta") < 0
+							&& item.getId().indexOf("sandbox") < 0) {
+						// String apiName = "books:v1";
+						String apiName = item.getId();
 
-				// for (Item item : array) { item.getDiscoveryRestUrl()
-				jsonObject = jsonParser.parse(restTemplate
-						.getForObject("https://www.googleapis.com/discovery/v1/apis/books/v1/rest", String.class))
-						.getAsJsonObject();
+						if (apiName.substring(0, 1).equalsIgnoreCase("C")) {
+							// "https://www.googleapis.com/discovery/v1/apis/books/v1/rest"
+							jsonObject = jsonParser
+									.parse(restTemplate.getForObject(item.getDiscoveryRestUrl(), String.class))
+									.getAsJsonObject();
 
-				String apiName = "books:v1";
+							if (!StringUtils.isEmpty(apiName)) {
+								System.out.println(apiName);
 
-				if (false) {
-					// Extract resources recursively
-					map = gson.fromJson(jsonObject.getAsJsonObject("resources"), Map.class);
-					getJsonObject(map, apiName);
+								if (!testYn) {
+									// Extract resources recursively
+									map = gson.fromJson(jsonObject.getAsJsonObject("resources"), Map.class);
+									getJsonObject(map, apiName);
 
-					if (dataPutYn) {
-						// Insert to Database
-						itemDao.insertApiMethodAndReqeustParameter(methodList);
+									if (dataPutYn) {
+										// Insert to Database
+										itemDao.insertApiMethodAndReqeustParameter(methodList);
+									}
+								}
+
+								if (!testYn) {
+									// Extract schemas
+									map = gson.fromJson(jsonObject.getAsJsonObject("schemas"), Map.class);
+									getResponseJsonObject(map, apiName);
+
+									if (dataPutYn) {
+										// Insert to Database
+										itemDao.insertResponseObjectAndResponseProperty(responseObjectList);
+									}
+								}
+
+								map = null;
+								jsonObject = null;
+							}
+						}
 					}
+
 				}
-
-				if (true) {
-					// Extract schemas
-					map = gson.fromJson(jsonObject.getAsJsonObject("schemas"), Map.class);
-					getResponseJsonObject(map, apiName);
-
-					if (dataPutYn) {
-						// Insert to Database
-						itemDao.insertResponseObjectAndResponseProperty(responseObjectList);
-					}
-				}
-
-				map = null;
-				jsonObject = null;
-				// }
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@SuppressWarnings("unchecked")
 	public static boolean getResponseJsonObject(Map<String, Object> map, String api)
 			throws ClassNotFoundException, SQLException {
 
-		if (!map.isEmpty()) {
+		if (map != null) {
 			value = "";
 
 			for (String key : map.keySet()) { // The key is keys in schemas
@@ -167,7 +177,7 @@ public class App {
 					responseObject.setResponsePropertyList(responsePropertyList);
 					responseObjectList.add(responseObject);
 
-					// System.out.println("\r\n" + responseObject.toString());
+					System.out.println("\r\n" + responseObject.toString());
 
 					responseObject = new ResponseObject();
 					responsePropertyList = new ArrayList<>();
@@ -191,54 +201,48 @@ public class App {
 			throws ClassNotFoundException, SQLException {
 
 		if (!map.isEmpty()) {
-			value = "";
-
 			for (String key : map.keySet()) { // resources name
-				value = map.get(key).toString();
-
 				if (key.equals("id")) { // Extracting METHOD
-					// System.out.println("\r\n[Method]:" + value);
 					method.setApi(api);
-					method.setMethod(value);
-				} else if (key.equals("description")) { // Extracting DESCRIPTION
-					// System.out.println("- DESC:" + value);
-					method.setDescription(value);
-				} else if (key.equals("parameters")) { // Extracting PARAMETERS
-					Map<String, Object> submap = (Map<String, Object>) map.get(key);
+					method.setMethod(map.get(key).toString());
 
-					for (String subkey : submap.keySet()) {
-						// System.out.println("[param] " + subkey);
-						requestParameter = new RequestParameter();
-						requestParameter.setParam(subkey);
-
-						Map<String, Object> secondSubmap = (Map<String, Object>) submap.get(subkey);
-
-						for (String secondSubkey : secondSubmap.keySet()) {
-							if (secondSubkey.equals("description")) {
-								// System.out.println(secondSubkey + ": " +
-								// secondSubmap.get(secondSubkey).toString());
-								requestParameter.setDesciption(secondSubmap.get(secondSubkey).toString());
-							}
-						}
-
-						// System.out.println(rp.toString());
-						requestParameterList.add(requestParameter);
+					if (map.get("description") != null) {
+						method.setDescription(map.get("description").toString());
+					} else {
+						method.setDescription("");
 					}
 
-				} else if (key.equals("response")) { // Extracting RESPONSE
-					Map<String, Object> submap = (Map<String, Object>) map.get(key);
+					if (map.get("response") != null) {
+						method.setResponseType(((Map<String, Object>) map.get("response")).get("$ref").toString());
+					} else {
+						method.setResponseType("");
+					}
 
-					// System.out.println(submap.get("$ref").toString());
-					method.setResponseType(submap.get("$ref").toString());
-				}
+					// Extracting PARAMETERS
+					Map<String, Object> submap = (Map<String, Object>) map.get("parameters");
 
-				value = "";
+					if (submap != null) {
+						for (String subkey : submap.keySet()) {
+							requestParameter = new RequestParameter();
+							requestParameter.setParam(subkey);
 
-				if (!StringUtils.isEmpty(method.getResponseType())) {
-					method.setRequestParameterList(requestParameterList);
+							Map<String, Object> secondSubmap = (Map<String, Object>) submap.get(subkey);
+
+							for (String secondSubkey : secondSubmap.keySet()) {
+								if (secondSubkey.equals("description")) {
+									requestParameter.setDesciption(secondSubmap.get(secondSubkey).toString());
+								}
+							}
+
+							requestParameterList.add(requestParameter);
+						}
+
+						method.setRequestParameterList(requestParameterList);
+					}
+
 					methodList.add(method);
 
-					// System.out.println("\r\n" + m.toString());
+					System.out.println("\r\n" + method.toString());
 
 					method = new Method();
 					requestParameterList = new ArrayList<>();

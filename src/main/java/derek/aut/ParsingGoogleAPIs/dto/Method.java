@@ -51,8 +51,17 @@ public class Method {
 
 	@Override
 	public String toString() {
-		return "Method [api=" + api + ", method=" + method + ", description=" + description + ", responseType="
-				+ responseType + ", requestParameterList=" + requestParameterList + "]";
+		String str = "Method [api=" + api + ", method=" + method + ", description=" + description + ", responseType="
+				+ responseType + "]\r\n";
+
+		if (requestParameterList != null) {
+			str += "Param size - " + requestParameterList.size() + "\r\n";
+			for (RequestParameter rp : requestParameterList) {
+				str += rp.toString() + "\r\n";
+			}
+		}
+
+		return str;
 	}
 
 }
