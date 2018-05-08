@@ -1,10 +1,17 @@
 package derek.aut.ParsingGoogleAPIs;
 
+import static java.lang.System.out;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -43,10 +50,10 @@ public class App {
 	private static RequestParameter requestParameter = new RequestParameter();
 	private static List<RequestParameter> requestParameterList = new ArrayList<>();
 
-	private static ResponseObject responseObject = new ResponseObject();
+	/*private static ResponseObject responseObject = new ResponseObject();
 	private static List<ResponseObject> responseObjectList = new ArrayList<>();
 	private static ResponseProperty responseProperty = new ResponseProperty();
-	private static List<ResponseProperty> responsePropertyList = new ArrayList<>();
+	private static List<ResponseProperty> responsePropertyList = new ArrayList<>();*/
 
 	@SuppressWarnings({ "unchecked", "unused" })
 	public static void main(String[] args) {
@@ -70,9 +77,17 @@ public class App {
 			if (dataPutYn) {
 				itemDao = new ItemDaoFactory().userDao();
 			}
-
+			//DownloadFiles("https://www.googleapis.com/discovery/v1/apis/adexchangebuyer/v1.2/rest", "1");
+			//DownloadFiles("https://www.googleapis.com/discovery/v1/apis/adexchangebuyer/v1.2/rest", "1");
 			if (result != null) {
 				List<Item> array = result.getItems();
+				
+				/*for (int i = 0; i < array.size(); i++) {
+					out.println(array.get(i).getDiscoveryRestUrl());
+					out.println(array.get(i).getId());
+					DownloadFiles(array.get(i).getDiscoveryRestUrl(), array.get(i).getName());
+				}*/
+				
 				for (Item item : array) {
 					if (item.getId().indexOf("alpha") < 0 && item.getId().indexOf("beta") < 0
 							&& item.getId().indexOf("sandbox") < 0) {
@@ -99,7 +114,7 @@ public class App {
 									}
 								}
 
-								if (!testYn) {
+								/*if (!testYn) {
 									// Extract schemas
 									map = gson.fromJson(jsonObject.getAsJsonObject("schemas"), Map.class);
 									getResponseJsonObject(map, apiName);
@@ -108,7 +123,7 @@ public class App {
 										// Insert to Database
 										itemDao.insertResponseObjectAndResponseProperty(responseObjectList);
 									}
-								}
+								}*/
 
 								map = null;
 								jsonObject = null;
@@ -123,7 +138,7 @@ public class App {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
+	/*@SuppressWarnings("unchecked")
 	public static boolean getResponseJsonObject(Map<String, Object> map, String api)
 			throws ClassNotFoundException, SQLException {
 
@@ -194,15 +209,15 @@ public class App {
 		}
 
 		return false;
-	}
-
+	}*/
+	
 	@SuppressWarnings("unchecked")
 	public static boolean getJsonObject(Map<String, Object> map, String api)
 			throws ClassNotFoundException, SQLException {
-
+		
 		if (!map.isEmpty()) {
 			for (String key : map.keySet()) { // resources name
-				if (key.equals("id")) { // Extracting METHOD
+				if (key.equals("id") && map.get("id").toString().indexOf("{") < 0 && map.get("id").toString().indexOf("}") < 0 ) { // Extracting METHOD
 					method.setApi(api);
 					method.setMethod(map.get(key).toString());
 
@@ -259,5 +274,24 @@ public class App {
 		}
 
 		return false;
+	}
+	
+	public static void DownloadFiles(String path, String fileName) {
+		URL url;
+		
+		if(new File("C:\\GoogleAPIs\\" + fileName + ".json").exists()) {
+			fileName += "_" + new java.text.SimpleDateFormat("HHmmss").format(new Date());
+		}
+		
+		File newFile = new File("C:\\GoogleAPIs\\" + fileName + ".json");
+
+		try {
+			url = new URL(path);
+			FileUtils.copyURLToFile(url, newFile);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 	}
 }
