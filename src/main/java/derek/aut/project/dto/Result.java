@@ -1,4 +1,4 @@
-package derek.aut.ParsingGoogleAPIs.dto;
+package derek.aut.project.dto;
 
 import java.util.List;
 

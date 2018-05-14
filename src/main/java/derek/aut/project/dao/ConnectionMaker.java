@@ -1,4 +1,4 @@
-package derek.aut.ParsingGoogleAPIs.dao;
+package derek.aut.project.dao;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

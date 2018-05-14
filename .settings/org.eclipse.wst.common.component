@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="ParsingGoogleAPIs">
+    <wb-module deploy-name="ParsingAPIs">
         <wb-resource deploy-path="/" source-path="/appClientModule" tag="defaultRootSource"/>
         <wb-resource deploy-path="/" source-path="/src/main/java"/>
         <wb-resource deploy-path="/" source-path="/src/test/java"/>
         <wb-resource deploy-path="/" source-path="/src/resources"/>
-        <property name="java-output-path" value="/ParsingGoogleAPIs/target/classes"/>
+        <property name="java-output-path" value="/ParsingAPIs/target/classes"/>
     </wb-module>
 </project-modules>

@@ -1,4 +1,4 @@
-package derek.aut.ParsingGoogleAPIs.dao;
+package derek.aut.project.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,11 +9,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import derek.aut.ParsingGoogleAPIs.dto.Item;
-import derek.aut.ParsingGoogleAPIs.dto.Method;
-import derek.aut.ParsingGoogleAPIs.dto.RequestParameter;
-import derek.aut.ParsingGoogleAPIs.dto.ResponseObject;
-import derek.aut.ParsingGoogleAPIs.dto.ResponseProperty;
+import derek.aut.project.dto.Item;
+import derek.aut.project.dto.Method;
+import derek.aut.project.dto.RequestParameter;
+import derek.aut.project.dto.ResponseObject;
+import derek.aut.project.dto.ResponseProperty;
 
 public class ItemDao {
 	private static Logger logger = LoggerFactory.getLogger(ItemDao.class);
@@ -43,7 +43,7 @@ public class ItemDao {
 		int primaryKey = 0;
 
 		String seq_sql = "select IFNULL(MAX(CAST(id AS DECIMAL)), 0) + 1 as id from api_method";
-		String sql = "insert into api_method(id, api, method, description, response_type) values(?, ?, ?, ?, ?)";
+		String sql = "insert into api_method(id, api, method, description, method_realname) values(?, ?, ?, ?, ?)";
 		String sub_sql = "insert into request_parameter(param, description, id) values(?, ?, ?)";
 
 		try {
@@ -53,7 +53,8 @@ public class ItemDao {
 			seq_ps = c.prepareStatement(seq_sql);
 			ps = c.prepareStatement(sql);
 			sub_ps = c.prepareStatement(sub_sql);
-
+			//System.out.println("methodList Cnt\r\n" + methodList.size());
+			
 			for (Method m : methodList) {
 				rs = seq_ps.executeQuery();
 
@@ -61,13 +62,13 @@ public class ItemDao {
 					primaryKey = rs.getInt("id");
 				}
 				
-				//System.out.println("\r\n" + m.toString());
+				System.out.println("\r\n" + m.toString());
 				index = 1;
 				ps.setInt(index++, primaryKey);
 				ps.setString(index++, m.getApi());
 				ps.setString(index++, m.getMethod());
 				ps.setString(index++, m.getDescription());
-				ps.setString(index++, m.getResponseType());
+				ps.setString(index++, m.getMethodRealname());
 
 				ps.executeUpdate();
 

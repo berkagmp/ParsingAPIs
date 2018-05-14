@@ -1,4 +1,4 @@
-package derek.aut.ParsingGoogleAPIs.dao;
+package derek.aut.project.dao;
 
 public class ItemDaoFactory {
 	public ItemDao userDao() {

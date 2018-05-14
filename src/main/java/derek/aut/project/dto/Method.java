@@ -1,12 +1,13 @@
-package derek.aut.ParsingGoogleAPIs.dto;
+package derek.aut.project.dto;
 
 import java.util.List;
 
 public class Method {
 	private String api;
 	private String method;
+	private String methodRealname;
 	private String description;
-	private String responseType;
+
 	private List<RequestParameter> requestParameterList;
 
 	public String getApi() {
@@ -14,7 +15,7 @@ public class Method {
 	}
 
 	public void setApi(String api) {
-		this.api = api;
+		this.api = api.toLowerCase();
 	}
 
 	public String getMethod() {
@@ -22,7 +23,7 @@ public class Method {
 	}
 
 	public void setMethod(String method) {
-		this.method = method;
+		this.method = method.toLowerCase();
 	}
 
 	public String getDescription() {
@@ -30,15 +31,15 @@ public class Method {
 	}
 
 	public void setDescription(String description) {
-		this.description = description;
+		this.description = description.toLowerCase();
 	}
 
-	public String getResponseType() {
-		return responseType;
+	public String getMethodRealname() {
+		return methodRealname;
 	}
 
-	public void setResponseType(String responseType) {
-		this.responseType = responseType;
+	public void setMethodRealname(String methodRealname) {
+		this.methodRealname = methodRealname;
 	}
 
 	public List<RequestParameter> getRequestParameterList() {
@@ -51,17 +52,8 @@ public class Method {
 
 	@Override
 	public String toString() {
-		String str = "Method [api=" + api + ", method=" + method + ", description=" + description + ", responseType="
-				+ responseType + "]\r\n";
-
-		if (requestParameterList != null) {
-			str += "Param size - " + requestParameterList.size() + "\r\n";
-			for (RequestParameter rp : requestParameterList) {
-				str += rp.toString() + "\r\n";
-			}
-		}
-
-		return str;
+		return "Method [api=" + api + ", method=" + method + ", methodRealname=" + methodRealname + ", description="
+				+ description + ", requestParameterList=" + requestParameterList + "]";
 	}
 
 }

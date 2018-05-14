@@ -1,4 +1,4 @@
-package derek.aut.ParsingGoogleAPIs.dto;
+package derek.aut.project.dto;
 
 public class API {
 	private String methodName;
