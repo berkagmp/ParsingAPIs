@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,10 @@ import com.google.gson.JsonParser;
 
 import derek.aut.project.dao.ItemDao;
 import derek.aut.project.dao.ItemDaoFactory;
+import derek.aut.project.dto.GoogleAPI;
 import derek.aut.project.dto.Item;
 import derek.aut.project.dto.Method;
 import derek.aut.project.dto.RequestParameter;
-import derek.aut.project.dto.Result;
 
 /**
  * handlingJSON
@@ -41,63 +42,74 @@ public class GoogleAPIParser {
 	private static List<Method> methodList = new ArrayList<>();
 	private static RequestParameter requestParameter = new RequestParameter();
 	private static List<RequestParameter> requestParameterList = new ArrayList<>();
-	
-	private static int MethodCount = 0;
-	
-	private static boolean dataPutYn = true;
-	private static boolean testYn = false;
 
+	private static boolean insertDB = false;
+
+	private static final String googleAPIURL = "https://www.googleapis.com/discovery/v1/apis?parameters";
+	
+	// The path of local directory to save APIs
+	private static final String dirPath = "C:\\GoogleAPIs\\";
+	
 	/**
 	 * @param args
 	 */
-	@SuppressWarnings({ "unchecked", "unused" })
 	public static void main(String[] args) {
+		// Download APIs to local directory
+		downLoadAPIs();
+
+		// Parsing APIs and insert DB
+		insertDB = false;
+		parsingJson();
+	}
+
+	public static void downLoadAPIs() {
 		RestTemplate restTemplate = new RestTemplate();
+		GoogleAPI googleAPI = restTemplate.getForObject(googleAPIURL, GoogleAPI.class);
+		List<Item> list = Arrays.asList(googleAPI.getItems());
+		out.println(list.size());
+
+		URL localUrl;
+		String path;
+		String fileName;
+
+		for (Item item : list) {
+			path = item.getDiscoveryRestUrl();
+			fileName = item.getId().replaceAll(":", ".");
+
+			if (new File(dirPath + fileName + ".json").exists()) {
+				fileName += "_" + new java.text.SimpleDateFormat("HHmmss").format(new Date());
+			}
+
+			File newFile = new File(dirPath + fileName + ".json");
+
+			try {
+				localUrl = new URL(path);
+				FileUtils.copyURLToFile(localUrl, newFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static void parsingJson() {
 		JsonParser jsonParser = new JsonParser();
 		Gson gson = new Gson();
-		
-		File file = null;
-		File[] dirList = null;
-
-		String url = "https://www.googleapis.com/discovery/v1/apis?parameters";
-		Result result = null;
-
-		ItemDao itemDao = null;
-
-		if (!testYn) {
-			result = restTemplate.getForObject(url, Result.class);
-		}
 
 		try {
-			// ItemDao itemDao = new ItemDaoFactory().userDao();
-			// itemDao.connectionTest();
+			ItemDao itemDao = new ItemDaoFactory().userDao();
+			File[] dirList = new File(dirPath).listFiles();
 
-			if (dataPutYn) {
-				itemDao = new ItemDaoFactory().userDao();
-			}
-			
-			List<Item> array = result.getItems();
-			
-			/*for (int i = 0; i < array.size(); i++) {
-				out.println(array.get(i).getDiscoveryRestUrl());
-				out.println(array.get(i).getId	());
-				DownloadFiles(array.get(i).getDiscoveryRestUrl(), array.get(i).getId().replaceAll(":", "."));
-			}*/
-
-			file = new File("C:\\Users\\berka\\Google Drive\\00-2.AUT\\01.Research Project\\GoogleAPIs");
-			dirList = file.listFiles();
-			
 			for (int f = 0; f < dirList.length; f++) {
 				if (dirList[f].getName().substring(dirList[f].getName().lastIndexOf(".") + 1).equals("json")) {
 					out.println(dirList[f].getName());
 
 					jsonObject = jsonParser.parse(new FileReader(dirList[f])).getAsJsonObject();
-					
+
 					apiName = jsonObject.get("name").toString().replaceAll("\"", "").trim();
-					canonicalName = jsonObject.get("title") == null ? "NoName " + apiName : jsonObject.get("title").toString().replaceAll("API", "").replaceAll("\"", "").trim();
-					
-					//out.println(canonicalName + "/" + apiName);
-					
+					canonicalName = jsonObject.get("title") == null ? "NoName " + apiName
+							: jsonObject.get("title").toString().replaceAll("API", "").replaceAll("\"", "").trim();
+
 					// Extract resources recursively
 					map = gson.fromJson(jsonObject.getAsJsonObject("resources"), Map.class);
 					getJsonObject(map, apiName, canonicalName);
@@ -107,32 +119,34 @@ public class GoogleAPIParser {
 				}
 
 			}
-			
-			if (dataPutYn) {
+
+			methodList.forEach(System.out::println);
+
+			if (insertDB) {
 				// Insert to Database
 				itemDao.insertApiMethodAndReqeustParameter(methodList);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-		out.println("MethodCount : "+ MethodCount);
-		out.println("MethodObjCount : "+ methodList.size());
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static boolean getJsonObject(Map<String, Object> map, String apiName, String canonicalName)
 			throws ClassNotFoundException, SQLException {
-		
+
 		if (!map.isEmpty()) {
 			for (String key : map.keySet()) { // resources name
-				if (key.equals("id") && map.get("id").toString().indexOf("{") < 0 && map.get("id").toString().indexOf("}") < 0 ) {
+				if (key.equals("id") && map.get("id").toString().indexOf("{") < 0
+						&& map.get("id").toString().indexOf("}") < 0) {
 					method.setApi(canonicalName);
 					method.setMethod(map.get(key).toString().replaceAll("\\.", " ").replaceAll(apiName, canonicalName));
+					method.setHttpMethod(map.get("httpMethod").toString());
 					method.setMethodRealname(map.get(key).toString());
+					method.setType("g");
 
 					if (map.get("description") != null) {
-						method.setDescription(map.get("description").toString().trim().replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("  ", " "));
+						method.setDescription(map.get("description").toString());
 					} else {
 						method.setDescription("");
 					}
@@ -149,7 +163,7 @@ public class GoogleAPIParser {
 
 							for (String secondSubkey : secondSubmap.keySet()) {
 								if (secondSubkey.equals("description")) {
-									requestParameter.setDesciption(secondSubmap.get(secondSubkey).toString().trim().replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("  ", " "));
+									requestParameter.setDescription(secondSubmap.get(secondSubkey).toString());
 								}
 							}
 
@@ -161,12 +175,8 @@ public class GoogleAPIParser {
 
 					methodList.add(method);
 
-					//out.println("\r\n" + method.toString());
-
 					method = new Method();
 					requestParameterList = new ArrayList<>();
-					
-					MethodCount++;
 				}
 
 				if (map.get(key) instanceof Map) {
@@ -181,23 +191,5 @@ public class GoogleAPIParser {
 
 		return false;
 	}
-	
-	public static void DownloadFiles(String path, String fileName) {
-		URL url;
-		
-		if(new File("C:\\GoogleAPIs\\" + fileName + ".json").exists()) {
-			fileName += "_" + new java.text.SimpleDateFormat("HHmmss").format(new Date());
-		}
-		
-		File newFile = new File("C:\\GoogleAPIs\\" + fileName + ".json");
 
-		try {
-			url = new URL(path);
-			FileUtils.copyURLToFile(url, newFile);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
 }

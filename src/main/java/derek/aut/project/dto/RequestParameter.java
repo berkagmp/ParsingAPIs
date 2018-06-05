@@ -1,28 +1,30 @@
 package derek.aut.project.dto;
 
+import derek.aut.project.util.Utils;
+
 public class RequestParameter {
 	private String param;
-	private String desciption;
+	private String description;
 
 	public String getParam() {
 		return param;
 	}
 
 	public void setParam(String param) {
-		this.param = param;
+		this.param = Utils.dataProcessing(param, true);
 	}
 
-	public String getDesciption() {
-		return desciption;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setDesciption(String desciption) {
-		this.desciption = desciption;
+	public void setDescription(String description) {
+		this.description = Utils.dataProcessing(description, false);
 	}
 
 	@Override
 	public String toString() {
-		return "RequestParameter [param=" + param + ", desciption=" + desciption + "]";
+		return "RequestParameter [param=" + param + ", description=" + description + "]";
 	}
 
 }

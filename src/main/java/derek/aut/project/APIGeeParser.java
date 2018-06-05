@@ -1,10 +1,9 @@
 package derek.aut.project;
 
-import static java.lang.System.out;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -16,120 +15,105 @@ import org.jdom2.JDOMException;
 import org.jdom2.filter.ElementFilter;
 import org.jdom2.input.SAXBuilder;
 
+import derek.aut.project.dao.ItemDao;
+import derek.aut.project.dao.ItemDaoFactory;
+import derek.aut.project.dto.Method;
+import derek.aut.project.dto.RequestParameter;
+
 public class APIGeeParser {
+	private static final String dirPath = "C:\\APIGeeAPIs\\";
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		out.println(getFiles());
+		List<Method> methodList = getFiles();
 
+		methodList.forEach(System.out::println);
+
+		ItemDao itemDao = new ItemDaoFactory().userDao();
+		itemDao.insertApiMethodAndReqeustParameter(methodList);
 	}
 
-	public static int getFiles() {
+	public static List<Method> getFiles() {
 		File file = null;
 		File[] dirList = null;
 
 		Document doc;
 		SAXBuilder builder = new SAXBuilder();
-		
-		int totalCnt = 0;
 
-		file = new File("C:\\Users\\berka\\Google Drive\\00-2.AUT\\01.Research Project\\APIGeeAPIs\\test");
+		file = new File(dirPath);
 		dirList = file.listFiles();
+
+		Method method = null;
+		List<Method> methodList = new ArrayList<>();
+		RequestParameter requestParameter = null;
+		List<RequestParameter> requestParameterList = null;
 
 		for (int f = 0; f < dirList.length; f++) {
 			if (dirList[f].getName().substring(dirList[f].getName().lastIndexOf(".") + 1).equals("xml")) {
-				out.println(dirList[f].getName());
+				System.out.println(dirList[f].getName());
 
 				try {
 					doc = builder.build(new FileInputStream(dirList[f].getPath()));
 
 					Iterator<Element> iter = doc.getDescendants(new ElementFilter("method"));
-					while(iter.hasNext()) {
-						Content c =(Content)iter.next();
-						
-						if(c instanceof Element) {
-							Element e = (Element)c;
-							
+					while (iter.hasNext()) {
+						method = new Method();
+						requestParameterList = new ArrayList<>();
+
+						method.setApi(dirList[f].getName().substring(0, dirList[f].getName().lastIndexOf(".")));
+
+						Content c = (Content) iter.next();
+
+						if (c instanceof Element) {
+							Element e = (Element) c;
+
+							method.setType("a");
+
 							List<Attribute> attrList = e.getAttributes();
-							out.println();
-							for(Attribute attr: attrList) {
-								out.println(attr.getName() + ":" + attr.getValue());
+							for (Attribute attr : attrList) {
+								if (attr.getName().equals("displayName")) {
+									method.setMethod(attr.getValue());
+								} else if (attr.getName().equals("id")) {
+									method.setMethodRealname(attr.getValue());
+								} else if (attr.getName().equals("name")) {
+									method.setHttpMethod(attr.getValue());
+								}
 							}
-							
-							Iterator<Element> iterDoc = e.getDescendants(new ElementFilter("doc"));
-							while(iterDoc.hasNext()) {
-								out.println("desc:" + iterDoc.next().getValue().trim().replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("  ", " "));
+
+							List<Element> iterDoc = e.getChildren();
+							for (Element ele : iterDoc) {
+								if (ele.getName().toString().equalsIgnoreCase(("doc"))) {
+									method.setDescription(ele.getValue().toString());
+
+								}
 							}
-							
+
 							Iterator<Element> iterParam = e.getDescendants(new ElementFilter("param"));
-							while(iterParam.hasNext()) {
-								out.println("param:" +iterParam.next().getAttributeValue("name"));
-								
+							while (iterParam.hasNext()) {
+								requestParameter = new RequestParameter();
+								requestParameter.setParam(iterParam.next().getAttributeValue("name"));
+
 								Iterator<Element> iterParamDoc = e.getDescendants(new ElementFilter("doc"));
-								while(iterParamDoc.hasNext()) {
-									out.println("desc:" + iterParamDoc.next().getValue().trim().replaceAll("\n", " ").replaceAll("\t", " ").replaceAll("  ", " "));
+								while (iterParamDoc.hasNext()) {
+									requestParameter.setDescription(iterParamDoc.next().getValue());
 								}
-							}
-						}
-						
-						totalCnt++;
-					}					
-					
-					//Element root = doc.getRootElement();
-					// out.println(root.getName());
 
-					// resources
-					/*List<Element> rootList = root.getChildren();
-					Element resources = null;
-
-					for (Element element : rootList) {
-						if (element.getName().equalsIgnoreCase("resources")) {
-							resources = element;
-						}
-					}*/
-					// out.println(resources.getName());
-
-					// resource
-					/*List<Element> resourceList = resources.getChildren();
-					for (Element element : resourceList) {
-						if (element.getName().equalsIgnoreCase("resource")) {
-
-							for (Element resourceEle : resourceList) {
-								if (resourceEle.getName().equalsIgnoreCase("resource")) {
-
-									for (Element methodEle : resourceEle.getChildren()) {
-										if (methodEle.getName().equalsIgnoreCase("method")) {
-										 out.println(methodEle.getAttribute("id").getValue());
-										 out.println(methodEle.getAttribute("apigee"));
-										 out.println(methodEle.getAttributeValue("name"));
-										 out.println(methodEle.getChildren("doc").size());
-										}
-									}
-								}
+								requestParameterList.add(requestParameter);
 							}
 
+							method.setRequestParameterList(requestParameterList);
 						}
-					}*/
-					// out.println(resource.getName());
+
+						methodList.add(method);
+					}
+
 				} catch (JDOMException | IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}
-		
-		return totalCnt;
+
+		return methodList;
 	}
 
-	public static Element getElement(Element baseElement, String targetName) {
-		List<Element> elementList = baseElement.getChildren();
-
-		for (Element element : elementList) {
-			if (element.getName().equalsIgnoreCase(targetName)) {
-				return element;
-			}
-		}
-
-		return null;
-	}
 }
